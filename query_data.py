@@ -1,7 +1,10 @@
+import os
 import argparse
+import streamlit as st
 from langchain_chroma import Chroma
 from langchain.prompts import ChatPromptTemplate
 from langchain_community.llms.ollama import Ollama
+from populate_database import db_update
 
 from get_embedding_function import get_embedding_function
 
@@ -18,13 +21,14 @@ Answer the question based on the above context: {question}
 """
 
 
-def main():
-    # Create CLI.
-    parser = argparse.ArgumentParser()
-    parser.add_argument("query_text", type=str, help="The query text.")
-    args = parser.parse_args()
-    query_text = args.query_text
-    query_rag(query_text)
+# def main():
+#     # Create CLI.
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument("query_text", type=str, help="The query text.")
+#     args = parser.parse_args()
+#     query_text = args.query_text
+#     query_rag(query_text)
+
 
 
 def query_rag(query_text: str):
@@ -45,9 +49,34 @@ def query_rag(query_text: str):
 
     sources = [doc.metadata.get("id", None) for doc, _score in results]
     formatted_response = f"Response: {response_text}\nSources: {sources}"
-    print(formatted_response)
-    return response_text
+    # st.write(formatted_response)
+    return formatted_response
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
+
+
+
+st.title("Fedex Chatbot Assistant")
+
+uploaded_file = st.file_uploader("upload a pdf file", type = ['pdf'])
+
+if uploaded_file:
+    save_path = os.path.join("data", uploaded_file.name)
+    with open(save_path, "wb") as f:
+        f.write(uploaded_file.getbuffer())
+
+    db_update()
+
+clear_db = st.button("Clear DB")
+
+if clear_db:
+    db_update(args_reset_flag=True)
+
+prompt = st.text_area("Enter your prompt")
+
+if st.button("Generate"):
+    if prompt:
+        with st.spinner("Generating response ...."):
+            st.write(query_rag(prompt))

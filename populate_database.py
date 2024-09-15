@@ -7,26 +7,11 @@ from langchain.schema.document import Document
 from get_embedding_function import get_embedding_function
 # from langchain_community.vectorstores import Chroma
 from langchain_chroma import Chroma
+import streamlit as st
 
 
 CHROMA_PATH = "chroma"
 DATA_PATH = "data"
-
-
-def main():
-
-    # Check if the database should be cleared (using the --clear flag).
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--reset", action="store_true", help="Reset the database.")
-    args = parser.parse_args()
-    if args.reset:
-        print("✨ Clearing Database")
-        clear_database()
-
-    # Create (or update) the data store.
-    documents = load_documents()
-    chunks = split_documents(documents)
-    add_to_chroma(chunks)
 
 
 def load_documents():
@@ -107,5 +92,23 @@ def clear_database():
         shutil.rmtree(CHROMA_PATH)
 
 
-if __name__ == "__main__":
-    main()
+
+
+def db_update(args_reset_flag=None):
+
+    # # Check if the database should be cleared (using the --clear flag).
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("--reset", action="store_true", help="Reset the database.")
+    # args = parser.parse_args()
+    if args_reset_flag:
+        st.write("✨ Clearing Database")
+        clear_database()
+
+    # Create (or update) the data store.
+    documents = load_documents()
+    chunks = split_documents(documents)
+    add_to_chroma(chunks)
+
+
+# if __name__ == "__main__":
+#     main()
