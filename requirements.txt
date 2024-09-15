@@ -5,3 +5,5 @@ pytest
 boto3
 langchain_community
 langchain-chroma
+streamlit
+colab-xterm
