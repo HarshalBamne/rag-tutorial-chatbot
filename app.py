@@ -38,10 +38,10 @@ def get_vectorstore_from_pdf(pdf):
     
     # create a vectorstore from the chunks
     # vector_store = Chroma.from_documents(document_chunks, OllamaEmbeddings(model="nomic-embed-text"))
-    vector_store = Chroma.from_documents(document_chunks, GoogleGenerativeAIEmbeddings(model="models/embedding-001"))
+    vector_store = Chroma.from_documents(document_chunks, GoogleGenerativeAIEmbeddings(model="models/embedding-001"),persist_directory="/content/chroma_db")
+    vector_store.persist()
+
     return vector_store
-
-
 
 
 
