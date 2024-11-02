@@ -14,7 +14,6 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_community.embeddings.ollama import OllamaEmbeddings
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.llms.ollama import Ollama
 
 
