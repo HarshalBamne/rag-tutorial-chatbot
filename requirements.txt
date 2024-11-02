@@ -7,3 +7,4 @@ langchain_community
 langchain-chroma
 streamlit
 colab-xterm
+langchain-google-genai

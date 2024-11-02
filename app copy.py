@@ -1,9 +1,12 @@
+# pip install streamlit langchain lanchain-openai beautifulsoup4 python-dotenv chromadb
+
 import os
 import re
 import random
 import streamlit as st
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_community.document_loaders import PyPDFDirectoryLoader
+# from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 # from langchain_openai import OpenAIEmbeddings, ChatOpenAI
@@ -21,6 +24,38 @@ from langchain_community.llms.ollama import Ollama
 DATA_PATH = "data"
 load_dotenv()
 
+### Data chunking and storage
+def calculate_chunk_ids(chunks):
+
+    # This will create IDs like "data/monopoly.pdf:6:2"
+    # Page Source : Page Number : Chunk Index
+
+    last_page_id = None
+    current_chunk_index = 0
+
+    for chunk in chunks:
+        source = chunk.metadata.get("source")
+        page = chunk.metadata.get("page")
+        current_page_id = f"{source}:{page}"
+
+        # If the page ID is the same as the last one, increment the index.
+        if current_page_id == last_page_id:
+            current_chunk_index += 1
+        else:
+            current_chunk_index = 0
+
+        # Calculate the chunk ID.
+        chunk_id = f"{current_page_id}:{current_chunk_index}"
+        last_page_id = current_page_id
+
+        # Add it to the page meta-data.
+        chunk.metadata["id"] = chunk_id
+
+    return chunks
+
+
+
+
 
 def get_vectorstore_from_pdf(pdf):
     # get the text in document form
@@ -36,11 +71,14 @@ def get_vectorstore_from_pdf(pdf):
     )
     
     document_chunks = text_splitter.split_documents(document)
+    document_chunks_with_id = calculate_chunk_ids(document_chunks)
     
     # create a vectorstore from the chunks
-    # vector_store = Chroma.from_documents(document_chunks, OllamaEmbeddings(model="nomic-embed-text"))
-    vector_store = Chroma.from_documents(document_chunks, GoogleGenerativeAIEmbeddings(model="models/embedding-001"))
+    # vector_store = Chroma.from_documents(document_chunks_with_id, OllamaEmbeddings(model="nomic-embed-text"))
+    vector_store = Chroma.from_documents(document_chunks_with_id, GoogleGenerativeAIEmbeddings(model="models/embedding-001"))
+    # vector_store = Chroma.from_documents(document_chunks_with_id, HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2"))
     return vector_store
+
 
 
 
@@ -49,9 +87,9 @@ def get_vectorstore_from_pdf(pdf):
 ### Rag Setup
 def get_context_retriever_chain(vector_store):
     # llm = ChatOpenAI()
-    # llm = Ollama(model="mistral")
     llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash-001")
-    
+    # llm = Ollama(model="mistral")
+
     retriever = vector_store.as_retriever()
     
     prompt = ChatPromptTemplate.from_messages([
@@ -70,11 +108,11 @@ def get_context_retriever_chain(vector_store):
 
 def get_conversational_rag_chain(retriever_chain): 
     # llm = ChatOpenAI()
-    # llm = Ollama(model="mistral")
     llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash-001")
+    # llm = Ollama(model="mistral")
     
     prompt = ChatPromptTemplate.from_messages([
-      ("system", "Please answer the following question using only information available in the document context.\
+      ("system", "Please answer the following question using only information available in the document context. \
         Only answer if the question is directly relevant to the document's content. \
        If the question is unrelated to the document, reply politely with, \
        'I'm here to help with information specifically from the document. Let me know if you have a question related to its content, or please try to frame your question a bit differently. \
@@ -99,7 +137,25 @@ def get_response(user_input):
     })
     answer = response['answer']
 
+    # if response.get("context"):
+    #     id_pattern = re.compile(r"metadata=\{.*?'id':\s*'(.*?)'")
+
+    #     # Collect all unique IDs
+    #     unique_ids = set()
+
+    #     for context_entry in response["context"]:
+    #         match = id_pattern.search(str(context_entry))
+    #         if match:
+    #             unique_ids.add(match.group(1))
+
+    #     page_numbers = list(unique_ids)
+
+    #     if page_numbers:
+    #         answer += f"\n\n(Source Page Numbers: {', '.join(page_numbers)})"
+
     return answer
+
+
 
 
 
@@ -110,13 +166,11 @@ st.title("Chat with PDFs")
 
 # sidebar
 with st.sidebar:
-    st.header("Upload Files")
-    uploaded_file = st.file_uploader("Please upload a pdf file", type = ['pdf'])
+    st.header("Upload a PDF File")
+    uploaded_file = st.file_uploader("upload a pdf file", type = ['pdf'])
 
 if uploaded_file is None:
-    st.info("Welcome! 👋\
-            I'm here to help you explore and understand your PDF documents. Simply upload a PDF file, and you can ask me questions about its contents—whether it's finding specific information, summarizing sections, or clarifying details.\
-            Just upload a document to get started, and type your question below! 😊")
+    st.info("Please upload a file")
 else:
     save_path = os.path.join("data", uploaded_file.name)
     with open(save_path, "wb") as f:
@@ -125,7 +179,7 @@ else:
     # session state
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = [
-            AIMessage(content="Hello !! How can I help you?"),
+            AIMessage(content="Hello, I am a bot. How can I help you?"),
         ]
 
     if "vector_store" not in st.session_state:
