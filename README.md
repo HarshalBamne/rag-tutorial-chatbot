@@ -1,6 +1,11 @@
 # rag-demo
 
-If running this code on colab please clone the repo, run the requirements.txt first and install all dependencies.
+
+To run in VScode
+1) Store you google_api_key in the .env file
+2) Install the requirements .txt file and then run streamlit run app.py --server.enableXsrfProtection false to launch the chatbot.
+
+If running this code on colab please clone the repo, store the google_api_key, run the requirements.txt first and install all dependencies.
 
 Next run the below steps in sequence:
 

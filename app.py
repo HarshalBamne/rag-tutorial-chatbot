@@ -38,8 +38,7 @@ def get_vectorstore_from_pdf(pdf):
     
     # create a vectorstore from the chunks
     # vector_store = Chroma.from_documents(document_chunks, OllamaEmbeddings(model="nomic-embed-text"))
-    vector_store = Chroma.from_documents(document_chunks, GoogleGenerativeAIEmbeddings(model="models/embedding-001"),persist_directory="/content/chroma_db")
-    vector_store.persist()
+    vector_store = Chroma.from_documents(document_chunks, GoogleGenerativeAIEmbeddings(model="models/embedding-001"))
 
     return vector_store
 
@@ -56,7 +55,7 @@ def get_context_retriever_chain(vector_store):
     prompt = ChatPromptTemplate.from_messages([
       MessagesPlaceholder(variable_name="chat_history"),
       ("user", "{input}"),
-      ("user", "Given the above conversation, please answer if the question is relevant to the document.If you are unable to find the information in the document say you don't know.")
+      ("user", "Given the above conversation, generate a search query to look up in order to get information relevant to the conversation.")
     ])
     retriever_chain = create_history_aware_retriever(llm, retriever, prompt)
 
